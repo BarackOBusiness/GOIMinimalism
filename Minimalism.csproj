@@ -28,6 +28,12 @@
     <Reference Include="UnityEngine.UI">
       <HintPath>lib/netstandard2.0/UnityEngine.UI.dll</HintPath>
     </Reference>
+    <Reference Include="Unity.PostProcessing.Runtime">
+      <HintPath>lib/netstandard2.0/Unity.PostProcessing.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>lib/netstandard2.0/Assembly-CSharp.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>

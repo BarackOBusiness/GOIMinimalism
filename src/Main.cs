@@ -1,8 +1,8 @@
 ﻿using System.Linq;
-using System.Collections;
 using BepInEx;
 using BepInEx.Configuration;
 using UnityEngine;
+using UnityEngine.Rendering.PostProcessing;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
@@ -17,7 +17,7 @@ namespace Minimalism
         private ConfigEntry<Color> backgroundColor;
 
         private Material blank = null;
-        
+
         private void Awake()
         {
             modEnabled = Config.Bind(
@@ -37,51 +37,66 @@ namespace Minimalism
                 "What color you want the player to be"
             );
             SceneManager.sceneLoaded += OnSceneLoad;
-        
-            Logger.LogInfo("GOI Minimalism is ready");
+
+            GameObject target = GameObject.Find("Canvas/Column/Settings");
+            var graphic = target.GetComponent<Graphic>();
+            if (graphic != null)
+            {
+                Material mat = graphic.materialForRendering;
+
+                if (mat != null)
+                {
+                    blank = new Material(mat);
+                }
+            }
         }
 
         private void OnSceneLoad(Scene scene, LoadSceneMode mode)
         {
-            // Main menu
-            if (scene.name == "Loader") {
-                // Always initialize the material every main menu load regardless of if the mod is enabled or not, that way
-                // you can enable or disable it in the midst of gameplay
-                GameObject target = GameObject.Find("Canvas/Column/Settings");
-                var graphic = target.GetComponent<Graphic>();
-                if (graphic != null) {
-                    Material mat = graphic.materialForRendering;
-
-                    if (mat != null) {
-                        blank = new Material(mat);
-                        Logger.LogInfo("Got the material, got his ass.");
-                    }
-                }
-            }
             // Don't apply the rest if the mod's disabled
             if (!modEnabled.Value)
                 return;
 
-            if (scene.name == "Mian") {
+            if (scene.name == "Mian")
+            {
                 // Setup the background first, simplest to do
                 Camera BGCamera = GameObject.Find("Main Camera/BGCamera").GetComponent<Camera>();
                 BGCamera.farClipPlane = 1.0f;
                 BGCamera.backgroundColor = backgroundColor.Value;
+                // Destroy fog and lighting shit
+                Destroy(GameObject.Find("BGCamera").GetComponent<FogControl>());
+                Destroy(GameObject.Find("BGCamera").GetComponent<FogVolumeRenderer>());
+                Destroy(GameObject.Find("Sun"));
+                Destroy(GameObject.Find("Main Camera/BGCamera/Sky"));
+                Destroy(GameObject.Find("Main Camera/BGCamera/FogVolumeCamera"));
+                // Destroy the post processing layers
+                Destroy(GameObject.Find("Main Camera").GetComponent<PostProcessLayer>());
+                Destroy(GameObject.Find("Main Camera/BGCamera").GetComponent<PostProcessLayer>());
+                // Destroy miscellaneous shit that will never be seen in this mod
+                Destroy(GameObject.Find("Props/BatSpawner"));
+                Destroy(GameObject.Find("Main Camera/BatCam"));
+                Destroy(GameObject.Find("Background"));
+                Destroy(GameObject.Find("SkySphere"));
+                Destroy(GameObject.Find("Snow"));
+                // Start accumulating the renderers that we will need to modify
                 Renderer[] noCollide = GameObject.Find("Mountain_NoCollide").GetComponentsInChildren<Renderer>();
                 Renderer[] mountain = GameObject.Find("Mountain").GetComponentsInChildren<Renderer>();
                 Renderer[] bucket = GameObject.Find("Rope4").GetComponentsInChildren<Renderer>();
                 Renderer[] props = GameObject.Find("Props").GetComponentsInChildren<Renderer>();
                 Renderer[] snake = GameObject.Find("Snake").GetComponentsInChildren<Renderer>();
-
+                // Concatenate it all into one big array
                 Renderer[] renderers = mountain.Concat(noCollide).Concat(props).Concat(bucket).Concat(snake).ToArray();
 
-                foreach (var rend in renderers) {
+                foreach (var rend in renderers)
+                {
                     rend.material = blank;
                     rend.material.color = foregroundColor.Value;
 
-                    if (rend.materials.Length > 1) {
+                    if (rend.materials.Length > 1)
+                    {
                         Material[] mats = new Material[rend.materials.Length];
-                        for (int i = 0; i < mats.Length; i++) {
+                        for (int i = 0; i < mats.Length; i++)
+                        {
                             mats[i] = new Material(blank);
                             mats[i].color = foregroundColor.Value;
                         }
@@ -91,14 +106,19 @@ namespace Minimalism
 
                 // Blank out the player
                 Renderer[] player = GameObject.Find("Player").GetComponentsInChildren<Renderer>();
-                foreach (var rend in player) {
-                    if (rend.gameObject.name != "Shadow") {
+                foreach (var rend in player)
+                {
+                    if (rend.gameObject.name != "Shadow")
+                    {
                         rend.material = blank;
                         rend.material.color = playerColor.Value;
                     }
                 }
+                // Set water color to accent color
+                GameObject.Find("Water").GetComponent<MeshRenderer>().material.SetColor("_SkyColor", playerColor.Value);
+                GameObject.Find("Water").GetComponent<MeshRenderer>().material.SetColor("_WaterColor", playerColor.Value);
 
-                // Make a list of names of terrible terrible cosmetic objects that must be destroyed for the game to be visible
+                // Make a list of names of terrible terrible cosmetic objects that must be destroyed for the game to be playable
                 string[] terribleTerribleObjects = new string[] {
                     "Props/Trees/Broadleaf_Desktop",
                     "Mountain_NoCollide/wet_grass",
@@ -121,30 +141,11 @@ namespace Minimalism
                     "Mountain_NoCollide/plant_Mandevilla_Vine_02"
                 };
 
-                foreach (string name in terribleTerribleObjects) {
+                foreach (string name in terribleTerribleObjects)
+                {
                     Destroy(GameObject.Find(name));
                 }
             }
         }
     }
 }
-
-/* The code used to black things out ingame in unity explorer
-Material uiMat = GameObject.Find("Canvas/InGame Menu/Panel").GetComponent<CanvasRenderer>().GetMaterial();
-Material blank = new Material(uiMat);
-
-Renderer[] renderers = GameObject.Find("Props").GetComponentsInChildren<Renderer>();
-
-foreach (var rend in renderers) {
-	rend.material = blank;
-	rend.material.color = new Color32(0x11, 0x11, 0x1b, 0xff);
-	if (rend.materials.Length > 1) {
-		Material[] mats = new Material[rend.materials.Length];
-		for (int i = 0; i < mats.Length; i++) {
-			mats[i] = new Material(blank);
-			mats[i].color = new Color32(0x11, 0x11, 0x1b, 0xff);
-		}
-		rend.materials = mats;
-	}
-}
-*/
