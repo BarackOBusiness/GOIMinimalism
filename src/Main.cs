@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 
 namespace Minimalism
 {
-    [BepInPlugin("goi.ext.minimalism", "Minimalism", "0.1.0")]
+    [BepInPlugin("goi.ext.minimalism", "Minimalism", "1.0.0")]
     public class Minimalism : BaseUnityPlugin
     {
         private ConfigEntry<bool> modEnabled;

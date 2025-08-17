@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Description>A plugin to make GOI super minimalist, featuring only the bare necessities</Description>
-    <Version>0.1.0</Version>
+    <Description>A plugin to simplify the visuals of GOI to their bare necessities.</Description>
+    <Version>1.0.0</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
